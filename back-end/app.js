@@ -5,8 +5,13 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var logger = require('morgan');
-var mongoose = require('mongoose');
 var cors = require('cors');
+const mongoose = require('mongoose');
+const passport = require('passport');
+const LocalStrategy = require('passport-local');
+
+const MongoStore = require('connect-mongo')(session);
+
 var errorHandler = require('errorhandler');
 
 //Configure mongoose's promise to global promise
@@ -30,21 +35,62 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(session({ secret: 'hehe you will never find out', cookie: { maxAge: 60000 }, resave: false, saveUninitialized: false }));
+
+// configure mongoose
+mongoose.connect('mongodb://localhost/chat-app-test');
+
+// models
+require('./models/Users');
+
+mongoose.set('debug', true);
+
+// password config must be below all models
+const User = mongoose.model('User');
+
+passport.use(new LocalStrategy({
+    usernameField: 'user[email]',
+    passwordField: 'user[password]',
+  }, (email, password, done) => {
+    User.findOne({ email })
+      .then((user) => {
+        if(!user || !user.validatePassword(password)) {
+          return done(null, false, { errors: { 'email or password': 'is invalid' } });
+        }
+  
+        return done(null, user);
+      }).catch(done);
+}));
+
+passport.serializeUser(function(user, cb) {
+  cb(null, user.id);
+});
+passport.deserializeUser(function(id, cb) {
+  User.findById(id, function (err, user) {
+      if (err) { return cb(err); }
+      cb(null, user);
+  });
+});
+
+// mongo session setup
+
+app.use(session({ 
+  secret: 'hehe you will never find out', 
+  resave: false, 
+  saveUninitialized: false,
+}));
+
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 
 if(!isProduction) {
   app.use(errorHandler());
 }
 
-// configure mongoose
-mongoose.connect('mongodb://localhost/chat-app-test');
-mongoose.set('debug', true);
-
-// models
-require('./models/Users');
-
-// password config must be below all models
-require('./config/passport');
+/**
+ * -------------- ROUTES ----------------
+ */
 
 app.use(require('./routes'))
 
