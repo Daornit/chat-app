@@ -8,6 +8,9 @@ const UsersSchema = new Schema({
     type: String, 
     required: true,
     unique: true},
+  firstName: String,
+  lastName: String,
+  avatar: String,
   hash: String,
   salt: String,
 });
@@ -27,8 +30,12 @@ UsersSchema.methods.toAuthJSON = function() {
     return {
       _id: this._id,
       email: this.email,
+      firstName: this.firstName,
+      lastName: this.lastName,
+      avatar: this.avatar,
+      friends: this.friends
     };
 };
 
-mongoose.model('User', UsersSchema);
+mongoose.model('Users', UsersSchema);
   

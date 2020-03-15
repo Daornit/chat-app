@@ -1,34 +1,37 @@
-var createError = require('http-errors');
-var express = require('express');
-var session = require('express-session');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
-var logger = require('morgan');
-var cors = require('cors');
+const express = require('express');
+const session = require('express-session');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const parseCookie = require('cookie').parse;
+const bodyParser = require('body-parser');
+const logger = require('morgan');
+const cors = require('cors');
 const mongoose = require('mongoose');
+
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
 
-const MongoStore = require('connect-mongo')(session);
-
-var errorHandler = require('errorhandler');
-
+const errorHandler = require('errorhandler');
+const config = require('./config')
 //Configure mongoose's promise to global promise
 mongoose.promise = global.Promise;
 
-//Configure isProduction variable
-const isProduction = process.env.NODE_ENV === 'production';
+const app = express();
 
-var app = express();
+// redis set up
+const redis = require('redis');
+const redisClient = redis.createClient();
+const RedisStore = require('connect-redis')(session);
+const redisStore = new RedisStore({ host: 'localhost', port: 6379, client: redisClient});
 
-
+var sessionService = require('./shared/session-service');
+sessionService.initializeRedis(redisClient, redisStore);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-app.use(cors());
+app.use(cors(config.allowedCORSOrigins));
 app.use(logger('dev'));
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -38,20 +41,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // configure mongoose
 mongoose.connect('mongodb://localhost/chat-app-test');
-
-// models
-require('./models/Users');
-
 mongoose.set('debug', true);
 
 // password config must be below all models
-const User = mongoose.model('User');
+const Users = mongoose.model('Users');
 
 passport.use(new LocalStrategy({
     usernameField: 'user[email]',
     passwordField: 'user[password]',
   }, (email, password, done) => {
-    User.findOne({ email })
+    Users.findOne({ email })
       .then((user) => {
         if(!user || !user.validatePassword(password)) {
           return done(null, false, { errors: { 'email or password': 'is invalid' } });
@@ -65,28 +64,23 @@ passport.serializeUser(function(user, cb) {
   cb(null, user.id);
 });
 passport.deserializeUser(function(id, cb) {
-  User.findById(id, function (err, user) {
+  Users.findById(id, function (err, user) {
       if (err) { return cb(err); }
       cb(null, user);
   });
 });
 
-// mongo session setup
+const sessionMiddleware = session({ 
+  store: redisStore,
+  key: config.sessionCookieKey,
+  secret: config.sessionSecret,
+  resave: true, 
+  saveUninitialized: true,
+});
 
-app.use(session({ 
-  secret: 'hehe you will never find out', 
-  resave: false, 
-  saveUninitialized: false,
-}));
-
-
+app.use(sessionMiddleware);
 app.use(passport.initialize());
 app.use(passport.session());
-
-
-if(!isProduction) {
-  app.use(errorHandler());
-}
 
 /**
  * -------------- ROUTES ----------------
@@ -94,30 +88,18 @@ if(!isProduction) {
 
 app.use(require('./routes'))
 
-//Error handlers & middlewares
-if(!isProduction) {
-  app.use((err, req, res) => {
-    console.log("res :: ", res);
-    res.status(err.status || 500);
+//Configure isProduction variable
+const isProduction = process.env.NODE_ENV === 'production';
 
-    res.json({
-      errors: {
-        message: err.message,
-        error: err,
-      },
-    });
-  });
+
+if(!isProduction) {
+  app.use(errorHandler());
 }
 
-app.use((err, req, res) => {
-  res.status(err.status || 500);
+const port = process.env.PORT || config.serverPort;
 
-  res.json({
-    errors: {
-      message: err.message,
-      error: {},
-    },
-  });
-});
-
-module.exports = app;
+module.exports = {
+  app: app,
+  port: port,
+  sessionMiddleware: sessionMiddleware
+}
