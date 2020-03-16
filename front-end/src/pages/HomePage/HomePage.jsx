@@ -1,10 +1,11 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import socketIOClient from "socket.io-client";
-import Profile from './components/Profile'
-
+import Profile from './components/Profile';
+import Friend from './components/Friends'
+import { Button } from 'react-bootstrap'
 import { userActions } from '../../actions';
-
+import './style.css';
 class HomePage extends React.Component {
 
     constructor() {
@@ -13,11 +14,16 @@ class HomePage extends React.Component {
           response: false,
           user: false,
           list: [],
+          friends: [],
           //https://github.com/wcamarao/session.socket.io/issues/9#issuecomment-13044749 never use ip to connect socketIOClient when you use localhost
-          socket: socketIOClient("http://localhost:4001")
+          socket: socketIOClient("http://localhost:4001"),
         };
+
+        this.mesRef = React.createRef();
         this.retriveCorrentUser = this.retriveCorrentUser.bind(this);
-        this.addFriend = this.addFriend.bind(this);
+        this.requestFriend = this.requestFriend.bind(this);
+        this.acceptFriend = this.acceptFriend.bind(this);
+        this.rejectFriend = this.rejectFriend.bind(this);
       }
 
     componentDidMount() {
@@ -25,6 +31,7 @@ class HomePage extends React.Component {
 
         socket.on('chat message', (msg) => {
             this.setState({list: [...this.state.list, msg]})
+            this.scrollToBottom();
         });
         socket.on('current-user', (user) => {
             console.log(user);
@@ -33,7 +40,14 @@ class HomePage extends React.Component {
         socket.on('error-msg', (errMsg) => {
             console.log(errMsg);
         });
+
+        socket.on('all-users', (friends) => {
+            console.log("friends :: ", friends);
+            this.setState({friends});
+        });
+        this.scrollToBottom();
         this.retriveCorrentUser();
+        this.getUsers();
     }
 
     retriveCorrentUser() {
@@ -41,56 +55,76 @@ class HomePage extends React.Component {
         socket.emit('current-user');
     }
 
-    addFriend( id ) {
+    requestFriend ( id ) {
         const { socket } = this.state;
 
-        console.log("FRIEND ID: " + id);
+        console.log("REQUIST FRIEND ID: " + id);
         socket.emit('friend-request', id);
     }
 
+    acceptFriend ( id ) {
+        const { socket } = this.state;
+
+        console.log("ACCEPT FRIEND ID: " + id);
+        socket.emit('accept-request', id);
+    }
+
+    rejectFriend ( id ) {
+        const { socket } = this.state;
+
+        console.log("REJECT FRIEND ID: " + id);
+        socket.emit('reject-request', id);
+    }
+
+    getUsers () {   
+        const { socket } = this.state;
+        socket.emit('get-all-friend');
+    }
+
+    scrollToBottom = () => {
+		this.mesRef.current.scrollTop = this.mesRef.current.scrollHeight;
+    };
+    
     render() {
         const { list, socket, user } = this.state;
         let input;
 
         return (
-            <div style={{width: '100%'}}>
+            <div className="container fill-height">
                 <div className="row">
-                    <div className="col">
-                        <Profile user={user} addFriend={this.addFriend}/>
+                    <div className="col-md-auto">
+                        <Profile user={user}/>
                     </div>
-                    <div className="col-6">
-                        <form
-                        onSubmit={e => {
-                            e.preventDefault()
-                            if (!input.value.trim()) {
-                            return
-                            }
-                            socket.emit('chat message', input.value);
-                            input.value = ''
-                        }}
-                        >
-                            <input ref={node => (input = node)} />
-                            <button type="submit">sent</button>
-                        </form>
+                    <div className="col">
+                        <div class="container">
+                            <div class="chat-box row" ref={this.mesRef}>
+                                {list.map((msg, index) => <div key={index} class="col-md-12 chat-item">
+                                    {msg}
+                                </div>)}
+                            </div>
+                        </div>
 
-                        <div>
-                            {list.map((msg, index) => <p key={index}>{msg}</p>)}    
+                        <div class="chat-footer">
+                            <div class="container">
+                                <form
+                                onSubmit={e => {
+                                    e.preventDefault()
+                                    if (!input.value.trim()) {
+                                    return
+                                    }
+                                    socket.emit('chat message', input.value);
+                                    input.value = ''
+                                }}
+                                >
+                                    <input ref={node => (input = node)} />
+                                    <button type="submit">sent</button>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                    <div className="col">
-                        <ul className="list-group">
-                            <li className="list-group-item active">
-                                <img className="rounded-circle" style={{marginRight: '5px'}} src="https://bootdey.com/img/Content/avatar/avatar1.png" alt="" width="40" height="40"/>
-                                <span style={{marginRight: '5px'}}>ras justo odio</span>
-                                <span className="badge badge-secondary">in-active</span>
-                            </li>
-                            <li className="list-group-item">Dapibus ac facilisis in </li>
-                            <li className="list-group-item">Morbi leo risus</li>
-                            <li className="list-group-item">Porta ac consectetur ac</li>
-                            <li className="list-group-item">Vestibulum at eros</li>
-                        </ul>
+                    <div className="col col-lg-3 friend-sidebar">
+                        <Friend users={this.state.friends} requestFriend={this.requestFriend} acceptFriend={this.acceptFriend} rejectFriend={this.rejectFriend}  />
                     </div>
-
                 </div>
             </div>
         );

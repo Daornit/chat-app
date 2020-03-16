@@ -19,9 +19,15 @@ io.use(function (socket, next) {
     sessionMiddleware(socket.request, {}, next);
 });
   
-const { getUserById, requestFriend, getAllFriendByID } = require('./services');
+const { getUserById, requestFriend, getAllUserByID, acceptFriend, rejectFriend } = require('./services');
 
 io.on('connection', function(socket){
+
+    if(!socket.request.session.passport){
+        userId = socket.request.session.passport.user;
+        return;
+    }
+
     let userId = socket.request.session.passport.user;
     
     socket.on('chat message', function(msg){
@@ -38,15 +44,52 @@ io.on('connection', function(socket){
         });
     })
 
+    socket.on('get-all-friend', function (){
+        console.log("get-all-friend called");
+        getAllUserByID(userId).then(data => socket.emit('all-users', data))
+    })
+
     socket.on('friend-request', function (friendId){
-        getAllFriendByID(userId).then(data => { console.log("All Friends Of User :: ", data)})
         if(friendId == userId) { 
             socket.emit('error-msg', "Can't be friend with yourself"); 
             return;
         } else {
-            // requestFriend(userId, friendId)
-            // .then(data => console.log("Successfully requested"))
-            // .catch(err => console.log("Failed to execute:: ", err))
+            requestFriend(userId, friendId)
+            .then(data => {
+                console.log("call get-all-friend");
+                getAllUserByID(userId).then(data => socket.emit('all-users', data))
+            })
+            .catch(err => socket.emit('error-msg', "Server side error"))
+        }
+    })
+
+    socket.on('accept-request', function (friendId){
+        if(friendId == userId) { 
+            socket.emit('error-msg', "Can't be friend with yourself"); 
+            return;
+        } else {
+            console.log('accept-request');
+            acceptFriend(userId, friendId)
+            .then(data => {
+                console.log("call get-all-friend");
+                getAllUserByID(userId).then(data => socket.emit('all-users', data))
+            })
+            .catch(err => socket.emit('error-msg', "Server side error"))
+        }
+    })
+
+    socket.on('reject-request', function (friendId){
+        if(friendId == userId) { 
+            socket.emit('error-msg', "Can't be friend with yourself"); 
+            return;
+        } else {
+            console.log('reject-request');
+            rejectFriend(userId, friendId)
+            .then(data => {
+                console.log("call get-all-friend");
+                getAllUserByID(userId).then(data => socket.emit('all-users', data))
+            })
+            .catch(err => socket.emit('error-msg', "Server side error"))
         }
     })
 });

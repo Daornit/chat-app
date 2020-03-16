@@ -1,0 +1,32 @@
+.fill-height {
+    height: 100vh !important;
+}
+
+.friend-sidebar {
+    height: 100vh !important;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+
+.chat-item {
+    background-color: #ffe1e1;
+    border-radius: 30px;
+    margin-top: 5px;
+    width: 100%;
+    overflow: hidden
+}
+
+.chat-footer{
+    background-color: #dfeeff;
+    padding: 10px;
+    position: fixed;
+    bottom: 0;
+}
+  
+.chat-box {
+    height: 90vh;
+    padding-bottom: 10vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}

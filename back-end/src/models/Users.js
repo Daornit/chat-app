@@ -11,6 +11,7 @@ const UsersSchema = new Schema({
   firstName: String,
   lastName: String,
   avatar: String,
+  friends: [{ type: Schema.Types.ObjectId, ref: 'Friends'}],
   hash: String,
   salt: String,
 });

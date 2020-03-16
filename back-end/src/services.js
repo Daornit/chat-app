@@ -37,7 +37,49 @@ const requestFriend = (userId, friendId) => {
     });
 }
 
-const getAllFriendByID = (userId) => {
+const acceptFriend = (userId, friendId) => {
+    return new Promise(async function(resolve, reject) {
+        try{
+            await Friends.findOneAndUpdate(
+                { requester: friendId, recipient: userId },
+                { $set: { status: 3 }}
+            )
+            await Friends.findOneAndUpdate(
+                { recipient: friendId, requester: userId },
+                { $set: { status: 3 }}
+            )
+            resolve(true);
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+const rejectFriend = (userId, friendId) => {
+    return new Promise(async function(resolve, reject) {
+        try{
+            const docA = await Friends.findOneAndRemove(
+                { requester: friendId, recipient: userId }
+            )
+            const docB = await Friends.findOneAndRemove(
+                { recipient: friendId, requester: userId }
+            )
+            const updateUserA = await Users.findOneAndUpdate(
+                { _id: friendId },
+                { $pull: { friends: docA._id }}
+            )
+            const updateUserB = await Users.findOneAndUpdate(
+                { _id: userId },
+                { $pull: { friends: docB._id }}
+            )
+            resolve(true);
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+const getAllUserByID = (userId) => {
     return Users.aggregate([
         { "$lookup": {
           "from": Friends.collection.name,
@@ -58,8 +100,11 @@ const getAllFriendByID = (userId) => {
         }}
       ])
 }
+
 module.exports = {
     getUserById,
     requestFriend,
-    getAllFriendByID,
+    getAllUserByID,
+    acceptFriend,
+    rejectFriend,
 }
