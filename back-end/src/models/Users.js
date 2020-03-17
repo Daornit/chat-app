@@ -4,12 +4,10 @@ const crypto = require('crypto');
 const { Schema } = mongoose;
 
 const UsersSchema = new Schema({
-  email: { 
+  nickName: { 
     type: String, 
     required: true,
     unique: true},
-  firstName: String,
-  lastName: String,
   avatar: String,
   friends: [{ type: Schema.Types.ObjectId, ref: 'Friends'}],
   hash: String,
@@ -30,9 +28,7 @@ UsersSchema.methods.validatePassword = function(password) {
 UsersSchema.methods.toAuthJSON = function() {
     return {
       _id: this._id,
-      email: this.email,
-      firstName: this.firstName,
-      lastName: this.lastName,
+      nickName: this.nickName,
       avatar: this.avatar,
       friends: this.friends
     };

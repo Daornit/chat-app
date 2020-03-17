@@ -1,11 +1,31 @@
 .fill-height {
     height: 100vh !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+.home-container{
+    border: 1px black ;
+    max-height: 80vh !important;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    background: rgb(80, 80, 80, 0.9);
+    padding-bottom: 35px;
+    border-radius: 25px;
 }
 
 .friend-sidebar {
     height: 100vh !important;
     overflow-x: hidden;
     overflow-y: auto;
+}
+
+.friend-list-container{
+    max-height: 40vh !important;
+    overflow: hidden;
+    overflow-y: auto;
+    padding-bottom: 35px;
 }
 
 
@@ -30,4 +50,33 @@
     padding-bottom: 10vh;
     overflow-y: auto;
     overflow-x: hidden;
+}
+
+.profile-container{
+    text-align: center;
+    background: rgb(50,50,50, 0.9);
+    border-radius: 50px;
+    margin-top: 25px;
+    margin-bottom: 25px;
+    padding: 15px;
+}
+
+.profile-nick-name{
+    color: #FFFFFF;
+    font-family: Noto-Serif;
+    line-height: 60px;
+}
+
+.profile-logout{
+    padding: 5px !important;
+    height: 30px !important;
+    margin: auto;
+    width: 60% !important;
+}
+
+.scroll-bar-custom::-webkit-scrollbar-track
+{
+	-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+	border-radius: 10px;
+	background-color: #F5F5F5;
 }

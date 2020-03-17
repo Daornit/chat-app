@@ -1,17 +1,15 @@
 const mongoose = require('mongoose');
-const passport = require('passport');
 const router = require('express').Router();
 const Users = mongoose.model('Users');
-const { requireAuth } = require('../../middlewares')
+const { requireAuth, authenticate } = require('../../middlewares')
 
-//POST new user route (optional, everyone has access)
 router.post('/', (req, res, next) => {
     const { body: { user } } = req;
   
-    if(!user.email) {
+    if(!user.nickName) {
       return res.status(422).json({
         errors: {
-          email: 'is required',
+          nickName: 'is required',
         },
       });
     }
@@ -37,14 +35,13 @@ router.post('/', (req, res, next) => {
       });
 });
 
-router.post('/login', passport.authenticate('local', { failureRedirect: '/api/users/login' }), (req, res, next) => {
+router.post('/login', authenticate, (req, res, next) => {
     return Users.findById(req.session.passport.user)
         .then((user) => {
             return res.json(user.toAuthJSON());
         });
 });
 
-//GET current route (required, only authenticated users have access)
 router.get('/current', requireAuth, (req, res, next) => {
     console.log(req.sessionID)
     return Users.findById(req.session.passport.user)
@@ -53,4 +50,9 @@ router.get('/current', requireAuth, (req, res, next) => {
         });
 });
 
+router.get('/logout', function(req, res){
+  console.log("Logout is called")
+  req.logout();
+  res.redirect('/');
+});
 module.exports = router;

@@ -1,4 +1,4 @@
-import { chatConstants } from '../constants';
+import { chatConstants, userConstants } from '../constants';
 
 export function chat(state = {}, action) {
   switch (action.type) {
@@ -15,6 +15,8 @@ export function chat(state = {}, action) {
     case chatConstants.RECEIVE_CHAT:
         state[action.payload.userId].push({ type: 'receive', msg: action.payload.msg});
         return Object.assign({}, state);
+    case userConstants.LOGOUT:
+        return {};
     default:
         return state
   }

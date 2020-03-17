@@ -2,6 +2,11 @@ const http = require('http');
 const socketIo = require("socket.io");
 const axios = require("axios");
 const mongoose = require('mongoose');
+const config = require('./config');
+const passport = require('passport');
+
+var passportSocketIo = require('passport.socketio');
+var cookieParser = require('cookie-parser');
 
 // models
 require('./models/Users');
@@ -10,10 +15,18 @@ const Users = mongoose.model('Users');
 const Friends = mongoose.model('Friends');
 
 // service to work with models
-const { app, port, sessionMiddleware } = require('./app')
+const { app, port, sessionMiddleware, redisStore } = require('./app')
 
 const server = http.createServer(app);
 const io = socketIo(server);
+
+io.use(passportSocketIo.authorize({
+    key: config.sessionCookieKey,
+    secret: config.sessionSecret,
+    store: redisStore,
+    passport: passport,
+    cookieParser: cookieParser,
+}));
 
 io.use(function (socket, next) {
     sessionMiddleware(socket.request, {}, next);
@@ -25,24 +38,14 @@ const { getUserById, requestFriend, getAllUserByID, acceptFriend, rejectFriend }
 let users = {}
 io.on('connection', async function(socket){
 
-    if(!socket.request.session.passport){
-        return;
-    }
-
-    let userId = socket.request.session.passport.user;
+    let userId = socket.request.user._id;
     
     users[userId] = socket.id;
+    let currentUser = socket.request.user;
     
-    console.log("users :: ", users);
+    console.log("userId :: ", userId)
     io.emit('online-users', users);
 
-    let currentUser = await Users.findById(userId);
-    
-    socket.on('chat message', function(msg){
-        console.log('message: ' + msg);
-        io.emit('chat message', msg);
-    });
-    
     socket.on('private-chat-send', function(data){
         console.log('Sended Data:: ', data);
         if(users[data.id]) {
@@ -72,7 +75,7 @@ io.on('connection', async function(socket){
             requestFriend(userId, friendId)
             .then(data => {
                 if(users[friendId]) {
-                    io.to(users[friendId]).emit('notification', `${currentUser.firstName} requested you to be friend`);
+                    io.to(users[friendId]).emit('notification', `${currentUser.nickName} requested you to be friend`);
                     getAllUserByID(friendId).then(
                         data =>  io.to(users[friendId]).emit('all-users', data)
                     )
@@ -92,7 +95,7 @@ io.on('connection', async function(socket){
             acceptFriend(userId, friendId)
             .then(data => {
                 if(users[friendId]) {
-                    io.to(users[friendId]).emit('notification', `${currentUser.firstName} accepted your friend request`);
+                    io.to(users[friendId]).emit('notification', `${currentUser.nickName} accepted your friend request`);
                     getAllUserByID(friendId).then(
                         data =>  io.to(users[friendId]).emit('all-users', data)
                     )
@@ -112,7 +115,7 @@ io.on('connection', async function(socket){
             .then(data => {
                 console.log("call get-all-friend");
                 if(users[friendId]) {
-                    io.to(users[friendId]).emit('notification', `${currentUser.firstName} rejected your friend request`);
+                    io.to(users[friendId]).emit('notification', `${currentUser.nickName} rejected your friend request`);
                     getAllUserByID(friendId).then(
                         data =>  io.to(users[friendId]).emit('all-users', data)
                     )

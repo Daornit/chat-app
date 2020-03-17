@@ -5,7 +5,7 @@ const Friends = mongoose.model('Friends');
 const { ObjectId } = mongoose.Types;
 
 const getUserById = (id) => {
-    return Users.findById(id).select('firstName lastName email avatar');
+    return Users.findById(id).select('nickName avatar');
 }
 
 const requestFriend = (userId, friendId) => {

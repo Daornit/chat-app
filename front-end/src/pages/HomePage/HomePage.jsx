@@ -25,16 +25,12 @@ class HomePage extends React.Component {
         this.requestFriend = this.requestFriend.bind(this);
         this.acceptFriend = this.acceptFriend.bind(this);
         this.rejectFriend = this.rejectFriend.bind(this);
-        this.setCurrentChatting = this.setCurrentChatting.bind(this)
+        this.setCurrentChatting = this.setCurrentChatting.bind(this);
       }
 
     componentDidMount() {
         const { socket } = this.state;
-        const { dispatch } = this.props;
-        socket.on('chat message', (msg) => {
-            this.setState({list: [...this.state.list, msg]})
-            this.scrollToBottom();
-        });
+        const { dispatch } = this.props
 
         socket.on('online-users', (onlineUsers) => {
             console.log("onlineUsers :: ", onlineUsers)
@@ -68,6 +64,10 @@ class HomePage extends React.Component {
         socket.on('private-chat-receive', (data) => {
             this.setCurrentChatting(data.id);
             dispatch(chatActions.receive(data.id, data.msg))
+        });
+
+        socket.on('connect_error', (error) => {
+            console.log('error' , error)
         });
 
         this.retriveCorrentUser();
@@ -130,45 +130,48 @@ class HomePage extends React.Component {
     } 
 
     render() {
-        const { list, socket, user, onlineUsers, chatId } = this.state;
+        const { user, onlineUsers, chatId } = this.state;
         let input;
 
         const { conversation } = this.props;
         console.log("conversation :: ", conversation)
 
-        let listOfChat = conversation[chatId] ? <div class="chat-box" ref={this.mesRef}>
+        let listOfChat = conversation[chatId] ? <div className="chat-box" ref={this.mesRef}>
                                                     {conversation[chatId].map((data, index) => <p key={index} class="chat-item">
                                                         {data.msg}
                                                     </p>)}
                                                 </div> : ''
         return (
-            <div className="container fill-height">
-                <div className="row">
-                    <div className="col-md-auto">
-                        <Profile user={user}/>
-                        <Friend current={chatId} setCurrentChatting={this.setCurrentChatting} users={this.state.friends} onlineUsers={onlineUsers} requestFriend={this.requestFriend} acceptFriend={this.acceptFriend} rejectFriend={this.rejectFriend}  />
-                    </div>
-                    <div className="col">
-                        <div class="container">
-                            {listOfChat}
+            <div  className="fill-height">
+                <div className="container home-container">
+                    <div className="row">
+                        <div className="col-md-auto">
+                            <Profile user={user}/>
+                            <Friend current={chatId} setCurrentChatting={this.setCurrentChatting} users={this.state.friends} onlineUsers={onlineUsers} requestFriend={this.requestFriend} acceptFriend={this.acceptFriend} rejectFriend={this.rejectFriend}  />
                         </div>
+                        <div className="col">
+                            <div className="container">
+                                {listOfChat}
+                            </div>
 
-                        <div class="chat-footer">
-                            <div class="container">
-                                <form
-                                onSubmit={e => {
-                                    e.preventDefault()
-                                    this.sendChat(input.value)
-                                    input.value = ''
-                                }}
-                                >
-                                    <input disabled={!this.state.chatId} ref={node => (input = node)} />
-                                    <button type="submit">sent</button>
-                                </form>
+                            <div className="chat-footer">
+                                <div className="container">
+                                    <form
+                                    onSubmit={e => {
+                                        e.preventDefault()
+                                        this.sendChat(input.value)
+                                        input.value = ''
+                                    }}
+                                    >
+                                        <input disabled={!this.state.chatId} ref={node => (input = node)} />
+                                        <button type="submit">sent</button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                
             </div>
         );
     }

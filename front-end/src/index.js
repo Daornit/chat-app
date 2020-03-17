@@ -6,7 +6,8 @@ import { store } from './helpers';
 import { App } from './pages/App';
 
 import 'bootstrap/dist/css/bootstrap.css';
-
+import 'react-notifications-component/dist/theme.css'
+import './styles/login.css'
 ReactDOM.render(
     <Provider store={store}>
         <App />

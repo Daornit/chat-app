@@ -1,13 +1,14 @@
 import React, {useState} from 'react';
-import {ButtonGroup, Button} from 'react-bootstrap';
+import { Scrollbars } from 'react-custom-scrollbars';
+import { ButtonGroup, Button } from 'react-bootstrap';
 
 const AddFriend = (props) => {
     let { user, requestFriend } = props
     return (<li className="list-group-item">
         <img className="rounded-circle" style={{marginRight: '5px'}} src={user.avatar} alt="" width="40" height="40"/>
-        <span style={{marginRight: '5px'}}>{user.firstName}</span>
+        <span style={{marginRight: '5px'}}>{user.nickName}</span>
         <div>
-            <Button onClick={e => requestFriend(user._id)}>Add Friend</Button>
+            <Button size="sm" onClick={e => requestFriend(user._id)}>Add Friend</Button>
         </div>
     </li>)
 }
@@ -16,10 +17,16 @@ const AcceptFriend = (props) => {
     let { user, acceptFriend, rejectFriend } = props
     return (<li className="list-group-item">
         <img className="rounded-circle" style={{marginRight: '5px'}} src={user.avatar} alt="" width="40" height="40"/>
-        <span style={{marginRight: '5px'}}>{user.firstName}</span>
+        <span style={{marginRight: '5px'}}>{user.nickName}</span>
         <div>
-            <Button onClick={e => acceptFriend(user._id)}>Accept Friend</Button>
-            <Button onClick={e => rejectFriend(user._id)}>Reject Friend</Button>
+            <div class="row">
+                <div class="col">
+                    <Button size="sm" onClick={e => acceptFriend(user._id)}>Accept</Button>
+                </div>
+                <div class="col">
+                    <Button size="sm" onClick={e => rejectFriend(user._id)}>Reject</Button>
+                </div>
+            </div>
         </div>
     </li>)
 }
@@ -28,7 +35,7 @@ const PendingFriend = (props) => {
     let { user } = props
     return (<li className="list-group-item">
         <img className="rounded-circle" style={{marginRight: '5px'}} src={user.avatar} alt="" width="40" height="40"/>
-        <span style={{marginRight: '5px'}}>{user.firstName}</span>
+        <span style={{marginRight: '5px'}}>{user.nickName}</span>
     </li>)
 }
 
@@ -37,7 +44,7 @@ const OnlineFriend = (props) => {
     let classNm = "list-group-item " + (isActive ? 'active': '');
     return (<li className={classNm} onClick={e => onClick()}>
         <img className="rounded-circle" style={{marginRight: '5px'}} src={user.avatar} alt="" width="40" height="40"/>
-        <span style={{marginRight: '5px'}}>{user.firstName}</span>
+        <span style={{marginRight: '5px'}}>{user.nickName}</span>
         <span className="badge badge-success">online</span>
     </li>)
 }
@@ -46,7 +53,7 @@ const OfflineFriend = (props) => {
     let { user } = props
     return (<li className="list-group-item disabled">
         <img className="rounded-circle" style={{marginRight: '5px'}} src={user.avatar} alt="" width="40" height="40"/>
-        <span style={{marginRight: '5px'}}>{user.firstName}</span>
+        <span style={{marginRight: '5px'}}>{user.nickName}</span>
         <span className="badge badge-secondary">offline</span>
     </li>)
 }
@@ -73,15 +80,18 @@ const Friend = (props)=> {
     }
 
     return (<div>
-        <ButtonGroup size="sm" className="mr-2" aria-label="First group">
-            <Button onClick={e => handleButton(3)}>Friends</Button>
-            <Button onClick={e => handleButton(2)}>Pending</Button>
-            <Button onClick={e => handleButton(1)}>Requested</Button>
-            <Button onClick={e => handleButton(0)}>Users</Button>
+        <ButtonGroup size="sm" aria-label="First group">
+            <Button onClick={e => handleButton(3)} className={visibilityFilter === 3 ? "btn-primary":"btn-secondary"}>Friends</Button>
+            <Button onClick={e => handleButton(2)} className={visibilityFilter === 2 ? "btn-primary":"btn-secondary"}>Pending</Button>
+            <Button onClick={e => handleButton(1)} className={visibilityFilter === 1 ? "btn-primary":"btn-secondary"}>Requested</Button>
+            <Button onClick={e => handleButton(0)} className={visibilityFilter === 0 ? "btn-primary":"btn-secondary"}>Users</Button>
         </ButtonGroup>
-        <ul className="list-group">
-            {list}
-        </ul>
+        <Scrollbars style={{ height: 300 }}>
+            <ul className="list-group">
+                {list}
+            </ul>
+        </Scrollbars>
+       
     </div>)
 }
  

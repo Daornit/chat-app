@@ -6,9 +6,9 @@ export const userService = {
     register,
 };
 
-function login(email, password) {
+function login(nickName, password) {
 
-    return axios.post(`/api/users/login`, {user: {email, password}})
+    return axios.post(`/api/users/login`, {user: {nickName, password}})
         .then(data => {
             // store user details and jwt token in local storage to keep user logged in between page refreshes
             localStorage.setItem('user', JSON.stringify(data.data));

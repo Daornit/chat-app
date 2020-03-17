@@ -47,13 +47,13 @@ mongoose.set('debug', true);
 const Users = mongoose.model('Users');
 
 passport.use(new LocalStrategy({
-    usernameField: 'user[email]',
+    usernameField: 'user[nickName]',
     passwordField: 'user[password]',
-  }, (email, password, done) => {
-    Users.findOne({ email })
+  }, (nickName, password, done) => {
+    Users.findOne({ nickName })
       .then((user) => {
         if(!user || !user.validatePassword(password)) {
-          return done(null, false, { errors: { 'email or password': 'is invalid' } });
+          return done(null, false, { errors: { 'nickName or password': 'is invalid' } });
         }
   
         return done(null, user);
@@ -101,5 +101,6 @@ const port = process.env.PORT || config.serverPort;
 module.exports = {
   app: app,
   port: port,
+  redisStore: redisStore,
   sessionMiddleware: sessionMiddleware
 }
