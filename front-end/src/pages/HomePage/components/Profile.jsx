@@ -1,8 +1,5 @@
 import React from "react";
 import Snipper from './Snipper';
-import FriendAddModal from './FriendAddModal';
-import FriendAcceptModal from './FriendAcceptModal';
-import FriendRejectModal from './FriendRejectModal';
 import { Link } from 'react-router-dom';
 
 const Profile = (props) => {
@@ -17,9 +14,5 @@ const Profile = (props) => {
     </div>) : (<Snipper/>)
     return (cmp);
 }
-
-{/* <FriendAddModal addFriend={addFriend}/>
-<FriendAcceptModal acceptFriend={acceptFriend}></FriendAcceptModal>
-<FriendRejectModal rejectFriend={rejectFriend}></FriendRejectModal> */}
 
 export default Profile;

@@ -4,7 +4,6 @@ export const userService = {
     login,
     logout,
     register,
-    getById,
 };
 
 function login(email, password) {
@@ -21,12 +20,6 @@ function login(email, password) {
 function logout() {
     // remove user from local storage to log user out
     localStorage.removeItem('user');
-}
-
-function getById(id) {
-    const requestOptions = {
-        method: 'GET',
-    };
 }
 
 function register(user) {
