@@ -1,6 +1,5 @@
 const http = require('http');
 const socketIo = require("socket.io");
-const axios = require("axios");
 const mongoose = require('mongoose');
 const config = require('./config');
 const passport = require('passport');
