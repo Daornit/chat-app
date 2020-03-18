@@ -80,25 +80,45 @@ const rejectFriend = (userId, friendId) => {
 }
 
 const getAllUserByID = (userId) => {
-    return Users.aggregate([
-        { "$lookup": {
-          "from": Friends.collection.name,
-          "let": { "friends": "$friends" },
-          "pipeline": [
-            { "$match": {
-              "recipient": ObjectId(userId),
-              "$expr": { "$in": [ "$_id", "$$friends" ] }
-            }},
-            { "$project": { "status": 1 } }
-          ],
-          "as": "friends"
-        }},
-        { "$addFields": {
-          "friendsStatus": {
-            "$ifNull": [ { "$min": "$friends.status" }, 0 ]
-          }
-        }}
-      ])
+    return new Promise(async function(resolve, reject) {
+        try{
+            const users = await Users.aggregate([
+                { "$lookup": {
+                  "from": Friends.collection.name,
+                  "let": { "friends": "$friends" },
+                  "pipeline": [
+                    { "$match": {
+                      "recipient": ObjectId(userId),
+                      "$expr": { "$in": [ "$_id", "$$friends" ] }
+                    }},
+                    { "$project": { "status": 1 } }
+                  ],
+                  "as": "friends"
+                }},
+                { "$addFields": {
+                  "friendsStatus": {
+                    "$ifNull": [ { "$min": "$friends.status" }, 0 ]
+                  }
+                }}
+            ])
+            resolve(users.filter(obj => {
+                return (obj._id + '') !== (userId + '');
+            }));
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+const updateUserAvatar = (userId, url) => {
+    return new Promise(async function(resolve, reject) {
+        try{
+            const user = await Users.findOneAndUpdate({ _id: userId }, {avatar : url}, {new: true})
+            resolve(user);
+        } catch (err) {
+            reject(err);
+        }
+    });
 }
 
 module.exports = {
@@ -107,4 +127,5 @@ module.exports = {
     getAllUserByID,
     acceptFriend,
     rejectFriend,
+    updateUserAvatar,
 }

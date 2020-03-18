@@ -86,7 +86,7 @@ const Friend = (props)=> {
             <Button onClick={e => handleButton(1)} className={visibilityFilter === 1 ? "btn-primary":"btn-secondary"}>Requested</Button>
             <Button onClick={e => handleButton(0)} className={visibilityFilter === 0 ? "btn-primary":"btn-secondary"}>Users</Button>
         </ButtonGroup>
-        <Scrollbars style={{ height: 300 }}>
+        <Scrollbars style={{ height: 'calc(60vh - 270px)' }}>
             <ul className="list-group">
                 {list}
             </ul>

@@ -3,8 +3,11 @@ import { connect } from 'react-redux';
 import socketIOClient from "socket.io-client";
 import Profile from './components/Profile';
 import Friend from './components/Friends';
+import Chat from './components/Chat';
+
 import { alertActions, chatActions } from "../../actions";
 import './style.css';
+
 class HomePage extends React.Component {
 
     constructor() {
@@ -25,6 +28,8 @@ class HomePage extends React.Component {
         this.requestFriend = this.requestFriend.bind(this);
         this.acceptFriend = this.acceptFriend.bind(this);
         this.rejectFriend = this.rejectFriend.bind(this);
+        this.sendChat = this.sendChat.bind(this);
+        this.profileSave = this.profileSave.bind(this);
         this.setCurrentChatting = this.setCurrentChatting.bind(this);
       }
 
@@ -44,12 +49,8 @@ class HomePage extends React.Component {
         });
 
         socket.on('current-user', (user) => {
-            console.log(user);
+            console.log("user :: ", user);
             this.setState({user: user});
-        });
-
-        socket.on('error-msg', (errMsg) => {
-            console.log(errMsg);
         });
 
         socket.on('all-users', (friends) => {
@@ -57,8 +58,9 @@ class HomePage extends React.Component {
             this.setState({friends});
         });
 
-        socket.on('notification', (msg) => {
-            this.props.dispatch(alertActions.success(msg))
+        socket.on('notification', (data) => {
+            if(data.type === 'info') this.props.dispatch(alertActions.success(data.msg))
+            else this.props.dispatch(alertActions.error(data.msg))
         });
 
         socket.on('private-chat-receive', (data) => {
@@ -66,17 +68,18 @@ class HomePage extends React.Component {
             dispatch(chatActions.receive(data.id, data.msg))
         });
 
-        socket.on('connect_error', (error) => {
-            console.log('error' , error)
-        });
-
         this.retriveCorrentUser();
         this.getUsers();
     }
-
-    componentWillUnmount() {
-        console.log("componentWillUnmount :: ");
+    
+    componentWillUnmount(){
         this.state.socket.disconnect()
+    }
+
+    profileSave(url) {
+        const { socket } = this.state;
+        console.log("profile URL ::", url)
+        socket.emit('profile-save', url);
     }
 
     retriveCorrentUser() {
@@ -110,12 +113,7 @@ class HomePage extends React.Component {
         socket.emit('get-all-friend');
     }
 
-    scrollToBottom = () => {
-		this.mesRef.current.scrollTop = this.mesRef.current.scrollHeight;
-    };
-    
     setCurrentChatting = ( id ) => {
-        //socket toi herhen holbogdoh be
         let { dispatch } = this.props;
         this.setState({chatId: id})
         dispatch(chatActions.load(id));
@@ -126,48 +124,22 @@ class HomePage extends React.Component {
         let { dispatch } = this.props;
         dispatch(chatActions.send(chatId, msg))
         socket.emit('private-chat-send', {id: chatId, msg});
-        this.scrollToBottom();
     } 
 
     render() {
         const { user, onlineUsers, chatId } = this.state;
-        let input;
-
         const { conversation } = this.props;
-        console.log("conversation :: ", conversation)
 
-        let listOfChat = conversation[chatId] ? <div className="chat-box" ref={this.mesRef}>
-                                                    {conversation[chatId].map((data, index) => <p key={index} class="chat-item">
-                                                        {data.msg}
-                                                    </p>)}
-                                                </div> : ''
         return (
             <div  className="fill-height">
                 <div className="container home-container">
-                    <div className="row">
-                        <div className="col-md-auto">
-                            <Profile user={user}/>
+                    <div className="row fix-height">
+                        <div className="col-md-auto fix-height">
+                            <Profile user={user} profileSave={this.profileSave}/>
                             <Friend current={chatId} setCurrentChatting={this.setCurrentChatting} users={this.state.friends} onlineUsers={onlineUsers} requestFriend={this.requestFriend} acceptFriend={this.acceptFriend} rejectFriend={this.rejectFriend}  />
                         </div>
-                        <div className="col">
-                            <div className="container">
-                                {listOfChat}
-                            </div>
-
-                            <div className="chat-footer">
-                                <div className="container">
-                                    <form
-                                    onSubmit={e => {
-                                        e.preventDefault()
-                                        this.sendChat(input.value)
-                                        input.value = ''
-                                    }}
-                                    >
-                                        <input disabled={!this.state.chatId} ref={node => (input = node)} />
-                                        <button type="submit">sent</button>
-                                    </form>
-                                </div>
-                            </div>
+                        <div className="col fix-height">
+                            <Chat chatId={this.state.chatId} sendChat={this.sendChat} conversation={conversation} ></Chat>
                         </div>
                     </div>
                 </div>

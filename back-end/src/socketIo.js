@@ -32,7 +32,7 @@ io.use(function (socket, next) {
     sessionMiddleware(socket.request, {}, next);
 });
   
-const { getUserById, requestFriend, getAllUserByID, acceptFriend, rejectFriend } = require('./services');
+const { getUserById, updateUserAvatar, requestFriend, getAllUserByID, acceptFriend, rejectFriend } = require('./services');
 
 // All online users
 let users = {}
@@ -47,83 +47,95 @@ io.on('connection', async function(socket){
     io.emit('online-users', users);
 
     socket.on('private-chat-send', function(data){
-        console.log('Sended Data:: ', data);
         if(users[data.id]) {
             io.to(users[data.id]).emit('private-chat-receive', {id: userId, msg: data['msg']})
         }
     });
 
+    socket.on('profile-save', function(url) {
+        console.log("url :: ", url)
+        updateUserAvatar(userId, url).then(savedUser => {
+            console.log(savedUser.avatar);
+            socket.emit('current-user', savedUser)
+        })
+    })
+
     socket.on('current-user', function(){
         console.log('current-user');
         getUserById(userId).then(user => {
             socket.emit('current-user', user);
-        }).catch( err => {
-            socket.emit('error-msg', "Can't find current user");
-        });
+        }).catch(err => socket.emit('notification', {
+            type: 'error',
+            msg: 'Server side error'
+        }))
     })
 
     socket.on('get-all-friend', function (){
         console.log("get-all-friend called");
-        getAllUserByID(userId).then(data => socket.emit('all-users', data))
+        getAllUserByID(userId).then(data => {
+            socket.emit('all-users', data);
+        })
     })
-
+    
     socket.on('friend-request', function (friendId){
-        if(friendId == userId) { 
-            socket.emit('error-msg', "Can't be friend with yourself"); 
-            return;
-        } else {
-            requestFriend(userId, friendId)
-            .then(data => {
-                if(users[friendId]) {
-                    io.to(users[friendId]).emit('notification', `${currentUser.nickName} requested you to be friend`);
-                    getAllUserByID(friendId).then(
-                        data =>  io.to(users[friendId]).emit('all-users', data)
-                    )
-                };
-                getAllUserByID(userId).then(data => socket.emit('all-users', data))
-            })
-            .catch(err => socket.emit('error-msg', "Server side error"))
-        }
+        requestFriend(userId, friendId)
+        .then(data => {
+            if(users[friendId]) {
+                io.to(users[friendId]).emit('notification', {
+                    type: 'info',
+                    msg: `${currentUser.nickName} requested you to be friend`
+                });
+                getAllUserByID(friendId).then(
+                    data =>  io.to(users[friendId]).emit('all-users', data)
+                )
+            };
+            getAllUserByID(userId).then(data => socket.emit('all-users', data))
+        })
+        .catch(err => socket.emit('notification', {
+            type: 'error',
+            msg: 'Server side error'
+        }))
     })
 
     socket.on('accept-request', function (friendId){
-        if(friendId == userId) { 
-            socket.emit('error-msg', "Can't be friend with yourself"); 
-            return;
-        } else {
-            console.log('accept-request');
-            acceptFriend(userId, friendId)
-            .then(data => {
-                if(users[friendId]) {
-                    io.to(users[friendId]).emit('notification', `${currentUser.nickName} accepted your friend request`);
-                    getAllUserByID(friendId).then(
-                        data =>  io.to(users[friendId]).emit('all-users', data)
-                    )
-                };
-                getAllUserByID(userId).then(data => socket.emit('all-users', data))
-            })
-            .catch(err => socket.emit('error-msg', "Server side error"))
-        }
+        acceptFriend(userId, friendId)
+        .then(data => {
+            if(users[friendId]) {
+                io.to(users[friendId]).emit('notification', {
+                    type: 'info',
+                    msg: `${currentUser.nickName} accepted your friend request`
+                });
+                getAllUserByID(friendId).then(
+                    data =>  io.to(users[friendId]).emit('all-users', data)
+                )
+            };
+            getAllUserByID(userId).then(data => socket.emit('all-users', data))
+        })
+        .catch(err => socket.emit('notification', {
+            type: 'error',
+            msg: 'Server side error'
+        }))
     })
 
     socket.on('reject-request', function (friendId){
-        if(friendId == userId) { 
-            socket.emit('error-msg', "Can't be friend with yourself"); 
-            return;
-        } else {
-            rejectFriend(userId, friendId)
-            .then(data => {
-                console.log("call get-all-friend");
-                if(users[friendId]) {
-                    io.to(users[friendId]).emit('notification', `${currentUser.nickName} rejected your friend request`);
-                    getAllUserByID(friendId).then(
-                        data =>  io.to(users[friendId]).emit('all-users', data)
-                    )
-                };
-                getAllUserByID(userId).then(data => socket.emit('all-users', data))
-            })
-            .catch(err => socket.emit('error-msg', "Server side error"))
-        }
+        rejectFriend(userId, friendId)
+        .then(data => {
+            console.log("call get-all-friend");
+            if(users[friendId]) {
+                io.to(users[friendId]).emit('notification', {
+                    type: 'info',
+                    msg: `${currentUser.nickName} rejected your friend request`}
+                );
+                getAllUserByID(friendId).then(
+                    data =>  io.to(users[friendId]).emit('all-users', data)
+                )
+            };
+            getAllUserByID(userId).then(data => socket.emit('all-users', data))
+        })
+        .catch(err => socket.emit('notification', {
+            type: 'error',
+            msg: 'Server side error'
+        }))
     })
 
     socket.on('disconnect', function(){

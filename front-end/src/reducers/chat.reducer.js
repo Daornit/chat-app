@@ -9,7 +9,6 @@ export function chat(state = {}, action) {
         delete state[action.userId];
         return Object.assign({}, state);
     case chatConstants.SEND_CHAT:
-        console.log("state :: ", state[action.payload.userId])
         state[action.payload.userId].push({ type: 'send', msg: action.payload.msg});
         return Object.assign({}, state);
     case chatConstants.RECEIVE_CHAT:
